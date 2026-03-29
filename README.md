@@ -1,36 +1,45 @@
 # Mixture of Experts — From Scratch
 
-A ground-up implementation of Mixture of Experts (MoE) built as a 4-act educational journey.
+A ground-up implementation of Mixture of Experts (MoE) built as a 4-stage educational journey.
 
 ## The Story
 
-### Act 1 — Dense Baseline
+### Stage 1 — Dense Baseline (`train_dense.py`)
 Build a tiny transformer where every token passes through the same Feed-Forward Network (FFN). This is your control — the simplest thing that works.
 
-### Act 2 — Experts Without Routing
-Replace the single FFN with `N_EXPERTS` identical FFNs. No routing yet — every token still goes to every expert (or one at random). The "dumb version" that proves the architecture works before adding intelligence.
+### Stage 2 — Naive Experts (`train_naive_experts.py`)
+Replace the single FFN with `N_EXPERTS` identical FFNs. No routing yet — every token is averaged across all experts. The "dumb version" that proves the architecture works before adding intelligence.
 
-### Act 3 — Add the Router
+### Stage 3 — Routed MoE (`train_moe.py`)
 One linear layer + softmax + `topk()`. The router learns on its own which expert handles which "kind" of token. No human labeling required.
 
-### Act 4 — Load Balancing Loss
-Without it, all tokens flood expert 0 (rich-get-richer collapse). The fix from the Switch Transformer paper: penalize `f_i × P_i` — fraction of tokens routed to expert `i` times the mean routing probability. This is what Mixtral and DeepSeek use in production.
+### Stage 4 — Balanced MoE (`train_balanced_moe.py`)
+Without load balancing, all tokens flood expert 0 (rich-get-richer collapse). The fix from the Switch Transformer paper: penalize `f_i × P_i` — fraction of tokens routed to expert `i` times the mean routing probability. This is what Mixtral and DeepSeek use in production.
 
 ## Structure
 
 ```
-moe/
-  act1_dense.py        # Tiny transformer with standard FFN
-  act2_experts.py      # FFN replaced by N identical experts (no routing)
-  act3_router.py       # Add linear router + topk selection
-  act4_load_balance.py # Add Switch Transformer load balancing loss
+src/moe/
+  config.py              # DenseConfig, NaiveExpertsConfig, RoutedMoEConfig, BalancedMoEConfig
+  data.py                # load_shakespeare(), get_batch()
+  trainer.py             # train(), compute_loss(), sample() — shared across all stages
+  types.py               # ModelOutput, ShakespeareData
+  models/
+    attention.py         # CausalSelfAttention
+    blocks.py            # TransformerBlock (ffn injected — the key seam)
+    dense.py             # FeedForward + DenseTransformer
+
+train_dense.py           # Stage 1 entrypoint
+train_naive_experts.py   # Stage 2 entrypoint
+train_moe.py             # Stage 3 entrypoint
+train_balanced_moe.py    # Stage 4 entrypoint
 ```
 
 ## Setup
 
 ```bash
 uv sync
-uv run python act1_dense.py
+uv run python train_dense.py
 ```
 
 ## References
