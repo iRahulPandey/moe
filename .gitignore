@@ -41,6 +41,9 @@ Thumbs.db
 *.swp
 *.swo
 
+# Session memory (Claude Code remember plugin)
+.remember/
+
 # Secrets
 .env
 .env.*
